@@ -220,8 +220,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun generateQuestion(): Question {
-        val palette = ColorsData.generateTestColors() // List<ColorItem>
-        if (palette.isEmpty()) {
+        val allColorItems = ColorsData.generateTestColors() // List<ColorItem>
+        if (allColorItems.isEmpty()) {
             // Fallback for error
             return Question(
                 prompt = app.getString(R.string.question_generation_error),
@@ -233,8 +233,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         return when (_gameMode.value) {
             GameMode.NORMAL -> {
-                val correctColorItem = palette.random()
-                val otherColorNames = palette.map { it.name }
+                val correctColorItem = allColorItems.random()
+                val otherColorNames = allColorItems.map { it.name }
                     .filter { it != correctColorItem.name }
                     .shuffled()
                     .take(3)
@@ -247,11 +247,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             GameMode.REVERSE -> {
-                val correctColorItem = palette.random() // This is the color to be identified by name
-                val otherColorItems = palette.filter { it.name != correctColorItem.name }
-                    .shuffled()
-                    .take(3)
-                val colorOptions = (listOf(correctColorItem.color) + otherColorItems.map { it.color }).shuffled()
+                val correctColorItem = allColorItems.random() // This is the color to be identified by name
+                // Generate 3 distractor colors, prioritizing confusing ones
+                val distractorColorItems = ColorsData.generateDistractorColorItems(
+                    correctColorName = correctColorItem.name,
+                    allColors = allColorItems,
+                    count = 3
+                )
+                val colorOptions = (listOf(correctColorItem.color) + distractorColorItems.map { it.color }).shuffled()
 
                 Question(
                     prompt = app.getString(R.string.question_prompt_reverse, correctColorItem.name),

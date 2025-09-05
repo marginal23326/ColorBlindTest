@@ -26,6 +26,18 @@ object ColorsData {
         "Pink" to Triple(220..255, 100..160, 150..200)
     )
 
+    val confusingColors = mapOf(
+        "Green" to listOf("Yellow", "Brown"),
+        "Red" to listOf("Brown", "Orange"),
+        "Purple" to listOf("Blue", "Pink"),
+        "Blue" to listOf("Purple"),
+        "Yellow" to listOf("Green", "Orange"),
+        "Brown" to listOf("Red", "Green", "Orange"),
+        "Orange" to listOf("Red", "Yellow", "Brown"),
+        "Pink" to listOf("Purple", "Red") // Assuming pink might be confused with light purple or light red
+        // Add more relationships as needed
+    )
+
     /** Generate a random shade of the given base color. */
     fun randomColor(name: String): Color {
         val ranges = baseColors[name] ?: error("Unknown color: $name")
@@ -40,5 +52,32 @@ object ColorsData {
         return baseColors.keys.map { name ->
             ColorItem(name, randomColor(name))
         }
+    }
+
+    /** Generates a list of 3 distractor color items, trying to pick confusing ones. */
+    fun generateDistractorColorItems(correctColorName: String, allColors: List<ColorItem>, count: Int = 3): List<ColorItem> {
+        val distractors = mutableListOf<ColorItem>()
+        val potentialConfusingNames = confusingColors[correctColorName]?.shuffled() ?: emptyList()
+
+        // Add confusing colors first
+        for (confusingName in potentialConfusingNames) {
+            if (distractors.size < count) {
+                allColors.find { it.name == confusingName && it.name != correctColorName }?.let {
+                    distractors.add(it)
+                }
+            }
+        }
+
+        // Add other random colors if not enough confusing ones were found
+        val remainingRandomColors = allColors.filter {
+            it.name != correctColorName && distractors.none { d -> d.name == it.name }
+        }.shuffled()
+
+        var i = 0
+        while (distractors.size < count && i < remainingRandomColors.size) {
+            distractors.add(remainingRandomColors[i])
+            i++
+        }
+        return distractors.take(count) // Ensure we don't exceed count if remainingRandomColors is small
     }
 }
