@@ -501,7 +501,7 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.result_your_answer_color, ""), // Removed %s as color patch is enough
+                            text = stringResource(R.string.result_your_answer_color, incorrectAnswer.question.correctName),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                         )
@@ -514,7 +514,7 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                      Spacer(modifier = Modifier.width(8.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                          Text(
-                            text = stringResource(R.string.result_correct_answer_color, ""), // Removed %s
+                            text = stringResource(R.string.result_correct_answer_color, incorrectAnswer.question.correctName),
                             style = MaterialTheme.typography.labelMedium,
                              color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                         )

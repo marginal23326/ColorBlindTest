@@ -4,8 +4,8 @@
     <!-- HomeScreen -->
     <string name="home_title">Color Blindness Quick Test</string>
     <string name="home_high_score">High Score: %.0f / 100</string> <!-- Consider if this needs to be mode-specific -->
-    <string name="home_instructions">Normal Mode: You will be shown a color patch and several choices for its name. Try to pick the correct name as fast as you can.
-Reverse Mode: You will be asked to identify a color by its name from several color patches.</string>
+    <string name="home_instructions">Normal Mode: You will be shown a color patch and several choices for its name. Try to pick the correct name as fast as you can.\n
+\nReverse Mode: You will be asked to identify a color by its name from several color patches.</string>
     <string name="home_number_of_questions">Number of Questions: %d</string>
     <string name="home_start_button">Start Test with %d Questions</string>
     <string name="home_clear_high_score_button">Clear High Score</string>
