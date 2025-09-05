@@ -18,6 +18,7 @@
     <string name="game_time_elapsed">Time: %ds</string>
     <string name="game_correct_count">Correct: %d</string>
     <string name="game_skip_button">Skip</string>
+    <string name="game_quit_button">Quit to Home</string> <!-- Added quit button string -->
     <string name="question_prompt_reverse">Which of these is %s?</string> <!-- For Reverse Mode -->
 
     <!-- ResultScreen -->

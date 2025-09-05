@@ -8,22 +8,22 @@ data class ColorItem(val name: String, val color: Color)
 object ColorsData {
 
     private val baseColors = mapOf(
-        // reds: darker to make them look more brown for protanopia
-        "Red" to Triple(120..200, 0..60, 0..60),
+        // reds: brighter, purer reds
+        "Red" to Triple(160..220, 0..50, 0..50),
         // greens: yellowish tint (more red in green channel)
-        "Green" to Triple(80..160, 160..255, 0..80),
+        "Green" to Triple(80..135, 160..255, 0..50),
         // blues: adjusted to be more distinctly blue
         "Blue" to Triple(0..30, 0..80, 200..255),
         // yellows: adjusted to keep R and G closer, G not too far above R
         "Yellow" to Triple(190..255, 190..235, 0..50),
         // oranges: challenging (mix red+yellow)
-        "Orange" to Triple(200..255, 100..180, 0..60),
+        "Orange" to Triple(210..255, 130..170, 0..40),
         // purples: adjusted to be more distinct from pink and blue
-        "Purple" to Triple(100..150, 0..50, 150..220),
+        "Purple" to Triple(125..150, 0..50, 150..220),
         // browns: slightly darker/muted
-        "Brown" to Triple(80..140, 40..90, 0..50),
+        "Brown" to Triple(100..140, 40..75, 10..40),
         // pinks: harder to distinguish from light red
-        "Pink" to Triple(220..255, 100..160, 150..200)
+        "Pink" to Triple(220..255, 120..160, 160..200)
     )
 
     val confusingColors = mapOf(

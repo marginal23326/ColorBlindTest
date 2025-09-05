@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle // Added for selected game mode
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -34,17 +37,21 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -100,7 +107,7 @@ fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
     val questionOptions = listOf(5, 10, 15, 20)
     val currentGameMode by vm.gameMode.collectAsState()
 
-    androidx.compose.material3.Scaffold(
+    Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onStart,
@@ -160,7 +167,9 @@ private fun HighScoreCard(highScore: Double, averageTime: Float, onClear: () -> 
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -199,7 +208,9 @@ private fun InstructionCard(instructions: String) {
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.Top, // Align icon to top
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -309,6 +320,7 @@ private fun QuestionSelectionSection(
 /* ============
    GAME SCREEN
    ============ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameScreen(vm: GameViewModel) {
     val q by vm.currentQuestion.collectAsState()
@@ -317,96 +329,202 @@ fun GameScreen(vm: GameViewModel) {
     val isAnswered by vm.answered.collectAsState()
     val gameMode by vm.gameMode.collectAsState()
 
+    // Collect feedback states
+    val showFeedback by vm.showFeedback.collectAsState()
+    val wasCorrectDisplay by vm.wasCorrectDisplay.collectAsState()
+    val correctOptionForDisplay by vm.correctOptionForDisplay.collectAsState()
+    val userSelectedOption by vm.selectedAnswer.collectAsState() // The answer user picked
+
     var elapsedDisplay by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(q, isAnswered) {
-        if (!isAnswered) {
+
+    // Colors for feedback
+    val correctAnswerFeedbackColor = Color(0xFF388E3C) // Dark Green
+    val incorrectAnswerFeedbackColor = Color(0xFFD32F2F) // Dark Red
+    val correctAnswerContainerColor = Color(0xFFC8E6C9) // Light Green for container
+    val incorrectAnswerContainerColor = Color(0xFFFFCDD2) // Light Red for container
+    val correctBorder = BorderStroke(3.dp, correctAnswerFeedbackColor)
+    val incorrectBorder = BorderStroke(3.dp, incorrectAnswerFeedbackColor)
+
+
+    LaunchedEffect(q, isAnswered, showFeedback) {
+        if (!isAnswered && !showFeedback) {
             vm.markQuestionStart()
-            while (!vm.answered.value) {
+            while (!vm.answered.value && !vm.showFeedback.value) {
                 elapsedDisplay = ((System.currentTimeMillis() - vm.questionStartTime.value) / 1000)
                 delay(150)
             }
+        } else if (isAnswered && !showFeedback) {
+             elapsedDisplay = ((System.currentTimeMillis() - vm.questionStartTime.value) / 1000)
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Header: progress and time
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.game_question_progress, index + 1, total), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.game_time_elapsed, elapsedDisplay), style = MaterialTheme.typography.titleMedium)
-        }
-        LinearProgressIndicator(
-            progress = { ((index + 1).coerceAtMost(total)).toFloat() / total.coerceAtLeast(1) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Question display area
-        if (gameMode == GameMode.NORMAL) {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth().height(220.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize().background(q.color),
-                    contentAlignment = Alignment.Center
-                ) {}
-            }
-        } else { // REVERSE mode
-            Text(
-                text = q.prompt, // e.g., "Which of these is Red?"
-                style = MaterialTheme.typography.headlineSmall, // Larger text for question
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp) // Give it some space
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = { vm.resetGame() }) {
+                        Icon(Icons.Filled.Home, contentDescription = stringResource(R.string.game_quit_button))
+                    }
+                }
             )
         }
-
-        // Options
-        if (gameMode == GameMode.NORMAL) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                q.options.forEach { opt ->
-                    Button(
-                        onClick = { vm.submitAnswer(opt as String) }, // opt is String
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isAnswered,
-                        colors = ButtonDefaults.filledTonalButtonColors()
-                    ) {
-                        Text((opt as String), modifier = Modifier.padding(vertical = 6.dp), style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // Apply innerPadding from Scaffold
+                .padding(horizontal = 16.dp, vertical = 16.dp), // Existing padding
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header: progress and time
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.game_question_progress, index + 1, total), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.game_time_elapsed, elapsedDisplay), style = MaterialTheme.typography.titleMedium)
             }
-        } else { // REVERSE mode - Color options
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                q.options.forEach { opt ->
-                    val colorOption = opt as Color
-                    Card(
+            LinearProgressIndicator(
+                progress = { ((index + 1).coerceAtMost(total)).toFloat() / total.coerceAtLeast(1) },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Question display area
+            if (gameMode == GameMode.NORMAL) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
                         modifier = Modifier
-                            .size(72.dp) // Square color patches
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable(enabled = !isAnswered) { vm.submitAnswer(colorOption) },
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(if (isAnswered && vm.selectedAnswer.value == colorOption) 6.dp else 2.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize().background(colorOption))
+                            .fillMaxSize()
+                            .background(q.color),
+                        contentAlignment = Alignment.Center
+                    ) {}
+                }
+            } else { // REVERSE mode
+                Text(
+                    text = q.prompt,
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp)
+                )
+            }
+
+            // Options
+            if (gameMode == GameMode.NORMAL) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    q.options.forEach { optAny ->
+                        val opt = optAny as String
+
+                        val actualButtonEnabledState = if (showFeedback) true else !isAnswered
+                        val canExecuteClick = !showFeedback && !isAnswered
+
+                        val buttonColors = if (showFeedback) {
+                            if (opt == userSelectedOption) { // This button is the one the user selected
+                                if (wasCorrectDisplay == true) { // And it was CORRECT
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = correctAnswerContainerColor,
+                                        contentColor = correctAnswerFeedbackColor
+                                    )
+                                } else { // And it was INCORRECT
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = incorrectAnswerContainerColor,
+                                        contentColor = incorrectAnswerFeedbackColor
+                                    )
+                                }
+                            } else if (opt == correctOptionForDisplay && wasCorrectDisplay == false) { // This button is the ACTUAL CORRECT answer, and the user picked something else
+                                ButtonDefaults.buttonColors(
+                                    containerColor = correctAnswerContainerColor,
+                                    contentColor = correctAnswerFeedbackColor
+                                )
+                            } else { // Other buttons during feedback (muted)
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        } else {
+                            // Not in feedback mode, standard tonal button
+                            ButtonDefaults.filledTonalButtonColors()
+                        }
+
+                        Button(
+                            onClick = {
+                                if (canExecuteClick) {
+                                    vm.submitAnswer(opt)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = actualButtonEnabledState, // Button is '''render-enabled''' during feedback for colors
+                            colors = buttonColors
+                        ) {
+                            Text(opt, modifier = Modifier.padding(vertical = 6.dp), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            } else { // REVERSE mode - Color options
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    q.options.forEach { optAny ->
+                        val colorOption = optAny as Color
+
+                        var currentBorder: BorderStroke? = null
+                        var currentElevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+
+                        if (showFeedback) {
+                             if (colorOption == correctOptionForDisplay && wasCorrectDisplay == true) { // User picked correct
+                                currentBorder = correctBorder
+                                currentElevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            } else if (colorOption == correctOptionForDisplay && wasCorrectDisplay == false) { // This is the correct one, user picked wrong
+                                currentBorder = correctBorder
+                                currentElevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Slightly elevated
+                            } else if (colorOption == userSelectedOption && wasCorrectDisplay == false) { // User picked this, and it'''s wrong
+                                currentBorder = incorrectBorder
+                                currentElevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            } else {
+                                // Other options during feedback, keep them plain
+                                 currentElevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            }
+                        }
+                        val currentCardClickableEnabled = if (showFeedback) false else !isAnswered
+
+                        Card(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .then(if (currentBorder != null) Modifier.border(currentBorder, RoundedCornerShape(12.dp)) else Modifier)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(enabled = currentCardClickableEnabled) { vm.submitAnswer(colorOption) },
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = currentElevation
+                        ) {
+                            Box(modifier = Modifier
+                                .fillMaxSize()
+                                .background(colorOption))
+                        }
                     }
                 }
             }
-        }
 
-        val correct by vm.correctCount.collectAsState()
-        Spacer(modifier = Modifier.weight(1f))
+            val correct by vm.correctCount.collectAsState()
+            Spacer(modifier = Modifier.weight(1f))
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.game_correct_count, correct), style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = { vm.skipQuestion() }, enabled = !isAnswered) {
-                Text(stringResource(R.string.game_skip_button), style = MaterialTheme.typography.bodyMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.game_correct_count, correct), style = MaterialTheme.typography.titleMedium)
+                TextButton(onClick = {
+                    if (!showFeedback && !isAnswered) {
+                         vm.skipQuestion()
+                    }
+                }, enabled = if (showFeedback) true else !isAnswered) { // Keep enabled for consistent look, control via onClick
+                    Text(stringResource(R.string.game_skip_button), style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }
@@ -422,7 +540,9 @@ fun ResultScreen(vm: GameViewModel, onRestart: () -> Unit) {
     val incorrectAnswers by vm.incorrectAnswers.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(20.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -468,13 +588,17 @@ fun ResultScreen(vm: GameViewModel, onRestart: () -> Unit) {
 private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
     ElevatedCard(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)) // Use a distinct color
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (incorrectAnswer.gameMode == GameMode.NORMAL) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(56.dp).background(incorrectAnswer.question.color, RoundedCornerShape(8.dp))
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(incorrectAnswer.question.color, RoundedCornerShape(8.dp))
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
@@ -493,7 +617,7 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                 }
             } else { // REVERSE Mode
                 Text(
-                    text = incorrectAnswer.question.prompt, // "Which of these is Red?"
+                    text = incorrectAnswer.question.prompt,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onErrorContainer
@@ -501,7 +625,7 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.result_your_answer_color, incorrectAnswer.question.correctName),
+                            text = stringResource(R.string.result_your_answer_color, ""), // Removed color name from "You picked for..."
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                         )
@@ -521,11 +645,11 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(incorrectAnswer.question.color, RoundedCornerShape(8.dp)) // Correct color
+                                .background(incorrectAnswer.question.color, RoundedCornerShape(8.dp))
                         )
                     }
                 }
-                 if (incorrectAnswer.selectedAnswer == Color.Transparent) { // If skipped in reverse mode
+                 if (incorrectAnswer.selectedAnswer == Color.Transparent) {
                     Text(
                         text = stringResource(R.string.answer_skipped_color),
                         style = MaterialTheme.typography.bodySmall,
