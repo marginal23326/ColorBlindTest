@@ -30,7 +30,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
         const val DEFAULT_TOTAL_QUESTIONS = 10
         private const val PREFS_NAME = "ColorBlindTestPrefs"
-        private const val HIGH_SCORE_KEY = "highScore" // Consider separate high scores for different modes
+        private const val HIGH_SCORE_KEY = "highScore"
+        private const val HIGH_SCORE_AVG_TIME_KEY = "highScoreAverageTime" // New key
         private const val GAME_MODE_KEY = "gameMode"
     }
 
@@ -48,6 +49,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _highScore = MutableStateFlow(0.0)
     val highScore: StateFlow<Double> = _highScore.asStateFlow()
+
+    private val _highScoreAverageTime = MutableStateFlow(-1.0f) // Default to -1.0f to indicate no time stored
+    val highScoreAverageTime: StateFlow<Float> = _highScoreAverageTime.asStateFlow()
 
     private val _currentQuestion = MutableStateFlow(generateQuestion())
     val currentQuestion: StateFlow<Question> = _currentQuestion.asStateFlow()
@@ -67,6 +71,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         _highScore.value = sharedPreferences.getFloat(HIGH_SCORE_KEY, 0f).toDouble()
+        _highScoreAverageTime.value = sharedPreferences.getFloat(HIGH_SCORE_AVG_TIME_KEY, -1.0f) // Load stored average time
         val savedMode = sharedPreferences.getString(GAME_MODE_KEY, GameMode.NORMAL.name)
         _gameMode.value = GameMode.valueOf(savedMode ?: GameMode.NORMAL.name)
     }
@@ -165,8 +170,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearHighScore() {
-        sharedPreferences.edit { remove(HIGH_SCORE_KEY) }
+        sharedPreferences.edit {
+            remove(HIGH_SCORE_KEY)
+            remove(HIGH_SCORE_AVG_TIME_KEY) // Clear stored average time
+        }
         _highScore.value = 0.0
+        _highScoreAverageTime.value = -1.0f // Reset average time
     }
 
     fun computeFinalScore(): Double {
@@ -189,7 +198,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         if (finalScore > _highScore.value) {
             _highScore.value = finalScore
-            sharedPreferences.edit { putFloat(HIGH_SCORE_KEY, finalScore.toFloat()) }
+            _highScoreAverageTime.value = avgTime.toFloat() // Store current game's average time
+            sharedPreferences.edit {
+                putFloat(HIGH_SCORE_KEY, finalScore.toFloat())
+                putFloat(HIGH_SCORE_AVG_TIME_KEY, avgTime.toFloat()) // Save average time with high score
+            }
         }
         return finalScore
     }

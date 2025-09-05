@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.colorblindtest.ui.theme.ColorBlindTestTheme
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val vm by viewModels<GameViewModel>()
@@ -95,6 +96,7 @@ fun AppHost(vm: GameViewModel) {
 fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
     val currentTotalQuestions by vm.totalQuestions.collectAsState()
     val highScore by vm.highScore.collectAsState()
+    val highScoreAverageTime by vm.highScoreAverageTime.collectAsState() // Collect average time
     val questionOptions = listOf(5, 10, 15, 20)
     val currentGameMode by vm.gameMode.collectAsState()
 
@@ -125,7 +127,11 @@ fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
             )
 
             if (highScore > 0) {
-                HighScoreCard(highScore = highScore, onClear = { vm.clearHighScore() })
+                HighScoreCard(
+                    highScore = highScore,
+                    averageTime = highScoreAverageTime, // Pass average time
+                    onClear = { vm.clearHighScore() }
+                )
             }
 
             InstructionCard(instructions = stringResource(R.string.home_instructions))
@@ -147,7 +153,7 @@ fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
 }
 
 @Composable
-private fun HighScoreCard(highScore: Double, onClear: () -> Unit) {
+private fun HighScoreCard(highScore: Double, averageTime: Float, onClear: () -> Unit) { // Added averageTime parameter
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -169,8 +175,9 @@ private fun HighScoreCard(highScore: Double, onClear: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                Text( // Placeholder for average time on home screen if needed later
-                    text = stringResource(R.string.summary_average_time_na),
+                Text(
+                    text = if (averageTime >= 0) String.format(Locale.US, stringResource(R.string.summary_average_time), averageTime)
+                           else stringResource(R.string.summary_average_time_na),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                 )
@@ -296,6 +303,7 @@ private fun QuestionSelectionSection(
         }
         HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
     }
+
 }
 
 /* ============
