@@ -1,3 +1,38 @@
 <resources>
     <string name="app_name">ColorBlindTest</string>
+
+    <!-- HomeScreen -->
+    <string name="home_title">Color Blindness Quick Test</string>
+    <string name="home_high_score">High Score: %.0f / 100</string>
+    <string name="home_instructions">You will be shown a color patch and several choices for its name. Try to pick the correct name as fast as you can.</string>
+    <string name="home_number_of_questions">Number of Questions: %d</string>
+    <string name="home_start_button">Start Test with %d Questions</string>
+    <string name="home_clear_high_score_button">Clear High Score</string>
+
+    <!-- GameScreen -->
+    <string name="game_question_progress">Question %d / %d</string>
+    <string name="game_time_elapsed">Time: %ds</string>
+    <string name="game_correct_count">Correct: %d</string>
+    <string name="game_skip_button">Skip</string>
+
+    <!-- ResultScreen -->
+    <string name="result_title">Result</string>
+    <string name="result_score">Score: %.0f / 100</string>
+    <string name="result_restart_button">Restart test</string>
+    <string name="result_review_incorrect_title">Review Incorrect Answers:</string>
+    <string name="result_your_answer">Your answer: %s</string>
+    <string name="result_correct_answer">Correct answer: %s</string>
+
+    <!-- GameViewModel related -->
+    <string name="answer_skipped">Skipped</string>
+    <string name="question_generation_error">Error</string>
+    <string name="summary_correct_accuracy">Correct: %1$d / %2$d
+Accuracy: %3$d%%</string>
+    <string name="summary_average_time">Average time: %ss</string>
+    <string name="summary_average_time_na">Average time: N/A</string>
+    <string name="summary_verdict_title">Verdict: %s</string>
+    <string name="verdict_no_strong_signs">No strong signs of red/green color confusion.</string>
+    <string name="verdict_mild_signs">Some signs of mild red/green confusion.</string>
+    <string name="verdict_significant_signs">Significant signs of red/green confusion (possible protanopia/protanomaly).</string>
+
 </resources>
