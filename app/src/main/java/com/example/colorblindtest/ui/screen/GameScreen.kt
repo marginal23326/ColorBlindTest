@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.example.colorblindtest.GameViewModel
 import com.example.colorblindtest.R
 import com.example.colorblindtest.model.GameMode
+import com.example.colorblindtest.model.Question
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,33 +60,20 @@ fun GameScreen(vm: GameViewModel) {
     val total by vm.totalQuestions.collectAsState()
     val isAnswered by vm.answered.collectAsState()
     val gameMode by vm.gameMode.collectAsState()
-
-    // Collect feedback states
     val showFeedback by vm.showFeedback.collectAsState()
-    val wasCorrectDisplay by vm.wasCorrectDisplay.collectAsState()
-    val correctOptionForDisplay by vm.correctOptionForDisplay.collectAsState()
-    val userSelectedOption by vm.selectedAnswer.collectAsState() // The answer user picked
+    val correctCount by vm.correctCount.collectAsState()
 
     var elapsedDisplay by remember { mutableLongStateOf(0L) }
-
-    // Colors for feedback
-    val correctAnswerFeedbackColor = Color(0xFF388E3C) // Dark Green
-    val incorrectAnswerFeedbackColor = Color(0xFFD32F2F) // Dark Red
-    val correctAnswerContainerColor = Color(0xFFC8E6C9) // Light Green for container
-    val incorrectAnswerContainerColor = Color(0xFFFFCDD2) // Light Red for container
-    val correctBorder = BorderStroke(3.dp, correctAnswerFeedbackColor)
-    val incorrectBorder = BorderStroke(3.dp, incorrectAnswerFeedbackColor)
-
 
     LaunchedEffect(q, isAnswered, showFeedback) {
         if (!isAnswered && !showFeedback) {
             vm.markQuestionStart()
             while (!vm.answered.value && !vm.showFeedback.value) {
-                elapsedDisplay = ((System.currentTimeMillis() - vm.questionStartTime.value) / 1000)
+                elapsedDisplay = (System.currentTimeMillis() - vm.questionStartTime.value) / 1000
                 delay(150)
             }
         } else if (isAnswered && !showFeedback) {
-            elapsedDisplay = ((System.currentTimeMillis() - vm.questionStartTime.value) / 1000)
+            elapsedDisplay = (System.currentTimeMillis() - vm.questionStartTime.value) / 1000
         }
     }
 
@@ -103,159 +92,194 @@ fun GameScreen(vm: GameViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // Apply innerPadding from Scaffold
-                .padding(horizontal = 16.dp, vertical = 16.dp), // Existing padding
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header: progress and time
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.game_question_progress, index + 1, total), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.game_time_elapsed, elapsedDisplay), style = MaterialTheme.typography.titleMedium)
-            }
-            LinearProgressIndicator(
-                progress = { ((index + 1).coerceAtMost(total)).toFloat() / total.coerceAtLeast(1) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            GameHeader(index, total, elapsedDisplay)
 
-            // Question display area
             if (gameMode == GameMode.NORMAL) {
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(q.color),
-                        contentAlignment = Alignment.Center
-                    ) {}
-                }
-            } else { // REVERSE mode
-                Text(
-                    text = q.prompt,
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp)
-                )
+                NormalModeUI(vm = vm, q = q)
+            } else {
+                ReverseModeUI(vm = vm, q = q)
             }
 
-            // Options
-            if (gameMode == GameMode.NORMAL) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    q.options.forEach { optAny ->
-                        val opt = optAny as String
-
-                        val actualButtonEnabledState = if (showFeedback) true else !isAnswered
-                        val canExecuteClick = !showFeedback && !isAnswered
-
-                        val buttonColors = if (showFeedback) {
-                            if (opt == userSelectedOption) { // This button is the one the user selected
-                                if (wasCorrectDisplay == true) { // And it was CORRECT
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = correctAnswerContainerColor,
-                                        contentColor = correctAnswerFeedbackColor
-                                    )
-                                } else { // And it was INCORRECT
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = incorrectAnswerContainerColor,
-                                        contentColor = incorrectAnswerFeedbackColor
-                                    )
-                                }
-                            } else if (opt == correctOptionForDisplay && wasCorrectDisplay == false) { // This button is the ACTUAL CORRECT answer, and the user picked something else
-                                ButtonDefaults.buttonColors(
-                                    containerColor = correctAnswerContainerColor,
-                                    contentColor = correctAnswerFeedbackColor
-                                )
-                            } else { // Other buttons during feedback (muted)
-                                ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                            }
-                        } else {
-                            // Not in feedback mode, standard tonal button
-                            ButtonDefaults.filledTonalButtonColors()
-                        }
-
-                        Button(
-                            onClick = {
-                                if (canExecuteClick) {
-                                    vm.submitAnswer(opt)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = actualButtonEnabledState, // Button is '''render-enabled''' during feedback for colors
-                            colors = buttonColors
-                        ) {
-                            Text(opt, modifier = Modifier.padding(vertical = 6.dp), style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-            } else { // REVERSE mode - Color options
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    q.options.forEach { optAny ->
-                        val colorOption = optAny as Color
-
-                        var currentBorder: BorderStroke? = null
-                        var currentElevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-
-                        if (showFeedback) {
-                            if (colorOption == correctOptionForDisplay && wasCorrectDisplay == true) { // User picked correct
-                                currentBorder = correctBorder
-                                currentElevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                            } else if (colorOption == correctOptionForDisplay && wasCorrectDisplay == false) { // This is the correct one, user picked wrong
-                                currentBorder = correctBorder
-                                currentElevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Slightly elevated
-                            } else if (colorOption == userSelectedOption && wasCorrectDisplay == false) { // User picked this, and it'''s wrong
-                                currentBorder = incorrectBorder
-                                currentElevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                            } else {
-                                // Other options during feedback, keep them plain
-                                currentElevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                            }
-                        }
-                        val currentCardClickableEnabled = if (showFeedback) false else !isAnswered
-
-                        Card(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .then(if (currentBorder != null) Modifier.border(currentBorder, RoundedCornerShape(12.dp)) else Modifier)
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable(enabled = currentCardClickableEnabled) { vm.submitAnswer(colorOption) },
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = currentElevation
-                        ) {
-                            Box(modifier = Modifier
-                                .fillMaxSize()
-                                .background(colorOption))
-                        }
-                    }
-                }
-            }
-
-            val correct by vm.correctCount.collectAsState()
             Spacer(modifier = Modifier.weight(1f))
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.game_correct_count, correct), style = MaterialTheme.typography.titleMedium)
-                TextButton(onClick = {
-                    if (!showFeedback && !isAnswered) {
-                        vm.skipQuestion()
-                    }
-                }, enabled = if (showFeedback) true else !isAnswered) { // Keep enabled for consistent look, control via onClick
-                    Text(stringResource(R.string.game_skip_button), style = MaterialTheme.typography.bodyMedium)
-                }
+            GameFooter(correctCount, showFeedback, isAnswered) {
+                vm.skipQuestion()
             }
+        }
+    }
+}
+
+@Composable
+private fun GameHeader(index: Int, total: Int, elapsedDisplay: Long) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(
+            stringResource(R.string.game_question_progress, index + 1, total),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Text(
+            stringResource(R.string.game_time_elapsed, elapsedDisplay),
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+    LinearProgressIndicator(
+        progress = { (index + 1).toFloat() / total.coerceAtLeast(1) },
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+private fun NormalModeUI(vm: GameViewModel, q: Question) {
+    val showFeedback by vm.showFeedback.collectAsState()
+    val isAnswered by vm.answered.collectAsState()
+    val wasCorrectDisplay by vm.wasCorrectDisplay.collectAsState()
+    val correctOptionForDisplay by vm.correctOptionForDisplay.collectAsState()
+    val userSelectedOption by vm.selectedAnswer.collectAsState()
+
+    val correctAnswerFeedbackColor = Color(0xFF388E3C)
+    val incorrectAnswerFeedbackColor = Color(0xFFD32F2F)
+    val correctAnswerContainerColor = Color(0xFFC8E6C9)
+    val incorrectAnswerContainerColor = Color(0xFFFFCDD2)
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(q.color),
+            contentAlignment = Alignment.Center
+        ) {}
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        q.options.forEach { optAny ->
+            val opt = optAny as String
+            val buttonColors = if (showFeedback) {
+                when {
+                    opt == userSelectedOption && wasCorrectDisplay == true -> ButtonDefaults.buttonColors(
+                        containerColor = correctAnswerContainerColor,
+                        contentColor = correctAnswerFeedbackColor
+                    )
+                    opt == userSelectedOption && wasCorrectDisplay == false -> ButtonDefaults.buttonColors(
+                        containerColor = incorrectAnswerContainerColor,
+                        contentColor = incorrectAnswerFeedbackColor
+                    )
+                    opt == correctOptionForDisplay && wasCorrectDisplay == false -> ButtonDefaults.buttonColors(
+                        containerColor = correctAnswerContainerColor,
+                        contentColor = correctAnswerFeedbackColor
+                    )
+                    else -> ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                ButtonDefaults.filledTonalButtonColors()
+            }
+
+            Button(
+                onClick = { if (!showFeedback && !isAnswered) vm.submitAnswer(opt) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isAnswered || showFeedback,
+                colors = buttonColors
+            ) {
+                Text(opt, modifier = Modifier.padding(vertical = 6.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReverseModeUI(vm: GameViewModel, q: Question) {
+    val showFeedback by vm.showFeedback.collectAsState()
+    val isAnswered by vm.answered.collectAsState()
+    val wasCorrectDisplay by vm.wasCorrectDisplay.collectAsState()
+    val correctOptionForDisplay by vm.correctOptionForDisplay.collectAsState()
+    val userSelectedOption by vm.selectedAnswer.collectAsState()
+
+    val correctAnswerFeedbackColor = Color(0xFF388E3C)
+    val incorrectAnswerFeedbackColor = Color(0xFFD32F2F)
+    val correctBorder = BorderStroke(3.dp, correctAnswerFeedbackColor)
+    val incorrectBorder = BorderStroke(3.dp, incorrectAnswerFeedbackColor)
+
+    Text(
+        text = q.prompt,
+        style = MaterialTheme.typography.headlineSmall,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 32.dp)
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        q.options.forEach { optAny ->
+            val colorOption = optAny as Color
+            val (border, elevation) = when {
+                showFeedback && colorOption == correctOptionForDisplay && wasCorrectDisplay == true ->
+                    correctBorder to CardDefaults.cardElevation(defaultElevation = 8.dp)
+                showFeedback && colorOption == correctOptionForDisplay && wasCorrectDisplay == false ->
+                    correctBorder to CardDefaults.cardElevation(defaultElevation = 4.dp)
+                showFeedback && colorOption == userSelectedOption && wasCorrectDisplay == false ->
+                    incorrectBorder to CardDefaults.cardElevation(defaultElevation = 8.dp)
+                showFeedback ->
+                    null to CardDefaults.cardElevation(defaultElevation = 1.dp)
+                else ->
+                    null to CardDefaults.cardElevation(defaultElevation = 2.dp)
+            }
+
+            Card(
+                modifier = Modifier
+                    .size(72.dp)
+                    .then(if (border != null) Modifier.border(border, RoundedCornerShape(12.dp)) else Modifier)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(enabled = !showFeedback && !isAnswered) { vm.submitAnswer(colorOption) },
+                shape = RoundedCornerShape(12.dp),
+                elevation = elevation
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colorOption)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.GameFooter(
+    correctCount: Int,
+    showFeedback: Boolean,
+    isAnswered: Boolean,
+    onSkip: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.game_correct_count, correctCount),
+            style = MaterialTheme.typography.titleMedium
+        )
+        TextButton(
+            onClick = { if (!showFeedback && !isAnswered) onSkip() },
+            enabled = !isAnswered || showFeedback
+        ) {
+            Text(stringResource(R.string.game_skip_button), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

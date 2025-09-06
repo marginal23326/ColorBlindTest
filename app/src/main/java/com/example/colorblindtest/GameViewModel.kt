@@ -25,8 +25,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         private const val HIGH_SCORE_KEY = "highScore"
         private const val HIGH_SCORE_AVG_TIME_KEY = "highScoreAverageTime"
         private const val GAME_MODE_KEY = "gameMode"
-        private const val FEEDBACK_DURATION_MS_CORRECT = 500L // Duration for correct answer feedback
-        private const val FEEDBACK_DURATION_MS_INCORRECT = 1000L // Duration for incorrect answer feedback
+        private const val FEEDBACK_DURATION_MS_CORRECT = 500L
+        private const val FEEDBACK_DURATION_MS_INCORRECT = 1000L
+
+        // Scoring constants
+        private const val ACCURACY_WEIGHT = 0.75
+        private const val TIME_WEIGHT = 0.25
+        private const val FAST_TIME_THRESHOLD = 2.0
+        private const val MEDIUM_TIME_THRESHOLD = 5.0
+        private const val SLOW_TIME_THRESHOLD = 8.0
     }
 
     private val app = getApplication<Application>()
@@ -97,14 +104,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _incorrectAnswers.value = emptyList()
         correctCount.value = 0
         _currentIndex.value = 0
-        _currentQuestion.value = generateQuestion()
-        _screen.value = Screen.GAME
         selectedAnswer.value = null
         answered.value = false
-        // Reset feedback states
         _showFeedback.value = false
         _wasCorrectDisplay.value = null
         _correctOptionForDisplay.value = null
+        _currentQuestion.value = generateQuestion()
+        _screen.value = Screen.GAME
     }
 
     fun markQuestionStart() {
@@ -112,80 +118,53 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun submitAnswer(option: Any) {
-        if (answered.value && !_showFeedback.value) return // Prevent multiple submissions if already answered but not yet in feedback
-        if (_showFeedback.value) return // If feedback is showing, ignore further attempts
-
-        val elapsed = System.currentTimeMillis() - questionStartTime.value
-        times.add(elapsed)
-        selectedAnswer.value = option // User's selection
-        answered.value = true // Mark as answered to disable options
-
-        val q = _currentQuestion.value
-        val isCorrect: Boolean
-
-        when (_gameMode.value) {
-            GameMode.NORMAL -> {
-                isCorrect = (option as? String) == q.correctName
-                _correctOptionForDisplay.value = q.correctName
-            }
-            GameMode.REVERSE -> {
-                isCorrect = (option as? Color) == q.color
-                _correctOptionForDisplay.value = q.color
-            }
+        if (answered.value || _showFeedback.value) return
+        val isCorrect = when (_gameMode.value) {
+            GameMode.NORMAL -> (option as? String) == _currentQuestion.value.correctName
+            GameMode.REVERSE -> (option as? Color) == _currentQuestion.value.color
         }
-
-        _wasCorrectDisplay.value = isCorrect
-        if (isCorrect) {
-            correctCount.value = correctCount.value + 1
-        } else {
-            val currentIncorrect = _incorrectAnswers.value.toMutableList()
-            currentIncorrect.add(IncorrectAnswer(question = q, selectedAnswer = option, gameMode = _gameMode.value))
-            _incorrectAnswers.value = currentIncorrect
-        }
-
-        _showFeedback.value = true
-        viewModelScope.launch {
-            delay(if (_wasCorrectDisplay.value == true) FEEDBACK_DURATION_MS_CORRECT else FEEDBACK_DURATION_MS_INCORRECT)
-            _showFeedback.value = false
-            _wasCorrectDisplay.value = null
-            // selectedAnswer.value is already set to the user's choice, keep it for UI feedback.
-            // _correctOptionForDisplay.value can be reset here or before nextQuestion()
-            _correctOptionForDisplay.value = null
-            nextQuestion()
-        }
+        handleAnswer(option, isCorrect)
     }
 
     fun skipQuestion() {
-        if (answered.value && !_showFeedback.value) return
-        if (_showFeedback.value) return
+        if (answered.value || _showFeedback.value) return
+        val skippedAnswer = when (_gameMode.value) {
+            GameMode.NORMAL -> app.getString(R.string.answer_skipped)
+            GameMode.REVERSE -> Color.Transparent
+        }
+        handleAnswer(skippedAnswer, isCorrect = false)
+    }
 
-        times.add((System.currentTimeMillis() - questionStartTime.value).coerceAtLeast(0L))
-        answered.value = true // Mark as answered
+    private fun handleAnswer(selectedOption: Any, isCorrect: Boolean) {
+        val elapsed = System.currentTimeMillis() - questionStartTime.value
+        times.add(elapsed)
+        selectedAnswer.value = selectedOption
+        answered.value = true
 
         val q = _currentQuestion.value
-        val skippedAnswerRepresentation: Any = when (_gameMode.value) {
-            GameMode.NORMAL -> app.getString(R.string.answer_skipped)
-            GameMode.REVERSE -> Color.Transparent // Placeholder for skipped color
-        }
-        selectedAnswer.value = skippedAnswerRepresentation // Show "Skipped" or transparent as selected
-
-        _wasCorrectDisplay.value = false // Skipped is treated as incorrect for display
         _correctOptionForDisplay.value = when (_gameMode.value) {
             GameMode.NORMAL -> q.correctName
             GameMode.REVERSE -> q.color
         }
+        _wasCorrectDisplay.value = isCorrect
 
-        val currentIncorrect = _incorrectAnswers.value.toMutableList()
-        currentIncorrect.add(IncorrectAnswer(question = q, selectedAnswer = skippedAnswerRepresentation, gameMode = _gameMode.value))
-        _incorrectAnswers.value = currentIncorrect
+        if (isCorrect) {
+            correctCount.value++
+        } else {
+            _incorrectAnswers.value = _incorrectAnswers.value + IncorrectAnswer(
+                question = q,
+                selectedAnswer = selectedOption,
+                gameMode = _gameMode.value
+            )
+        }
 
         _showFeedback.value = true
         viewModelScope.launch {
-            delay(FEEDBACK_DURATION_MS_INCORRECT)
+            val feedbackDuration = if (isCorrect) FEEDBACK_DURATION_MS_CORRECT else FEEDBACK_DURATION_MS_INCORRECT
+            delay(feedbackDuration)
             _showFeedback.value = false
             _wasCorrectDisplay.value = null
             _correctOptionForDisplay.value = null
-            // selectedAnswer.value will be reset by nextQuestion
             nextQuestion()
         }
     }
@@ -227,13 +206,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val avgTime = if (times.isNotEmpty()) times.average() / 1000.0 else 0.0
 
         val timeScore: Double = when {
-            avgTime <= 2.0 -> 100.0
-            avgTime <= 5.0 -> ((5.0 - avgTime) / (5.0 - 2.0)) * 100.0
-            avgTime <= 8.0 -> (((8.0 - avgTime) / (8.0 - 5.0)) * 100.0) - 100.0
+            avgTime <= FAST_TIME_THRESHOLD -> 100.0
+            avgTime <= MEDIUM_TIME_THRESHOLD -> ((MEDIUM_TIME_THRESHOLD - avgTime) / (MEDIUM_TIME_THRESHOLD - FAST_TIME_THRESHOLD)) * 100.0
+            avgTime <= SLOW_TIME_THRESHOLD -> (((SLOW_TIME_THRESHOLD - avgTime) / (SLOW_TIME_THRESHOLD - MEDIUM_TIME_THRESHOLD)) * 100.0) - 100.0
             else -> -100.0
         }
 
-        val final = (0.75 * accuracy) + (0.25 * (timeScore + 100.0) / 2.0)
+        val final = (ACCURACY_WEIGHT * accuracy) + (TIME_WEIGHT * (timeScore + 100.0) / 2.0)
         val finalScore = final.coerceIn(0.0, 100.0)
 
         if (finalScore > _highScore.value) {
