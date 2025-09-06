@@ -157,12 +157,13 @@ private fun ReverseModeReview(incorrectAnswer: IncorrectAnswer) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AnswerColorBox(
             label = stringResource(R.string.result_your_answer_color, incorrectAnswer.question.correctName),
-            color = incorrectAnswer.selectedAnswer as Color
+            color = incorrectAnswer.selectedAnswer as Color,
+            modifier = Modifier.weight(1f)
         )
-        Spacer(modifier = Modifier.width(8.dp))
         AnswerColorBox(
             label = stringResource(R.string.result_correct_answer_color, incorrectAnswer.question.correctName),
-            color = incorrectAnswer.question.color
+            color = incorrectAnswer.question.color,
+            modifier = Modifier.weight(1f)
         )
     }
     if (incorrectAnswer.selectedAnswer == Color.Transparent) {
@@ -177,8 +178,8 @@ private fun ReverseModeReview(incorrectAnswer: IncorrectAnswer) {
 }
 
 @Composable
-private fun AnswerColorBox(label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+private fun AnswerColorBox(label: String, color: Color, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium,
