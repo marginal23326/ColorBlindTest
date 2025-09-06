@@ -625,7 +625,7 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.result_your_answer_color, ""), // Removed color name from "You picked for..."
+                            text = stringResource(R.string.result_your_answer_color, incorrectAnswer.question.correctName),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                         )
