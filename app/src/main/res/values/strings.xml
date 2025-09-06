@@ -30,7 +30,6 @@
     <string name="result_correct_answer">Correct answer: %s</string>
     <string name="result_your_answer_color">You picked this color for %s.</string> <!-- For Reverse Mode Review -->
     <string name="result_correct_answer_color">This was the correct color for %s.</string> <!-- For Reverse Mode Review -->
-    <string name="result_selected_color_name_prompt">The question was: Which is %s?</string>
 
     <!-- GameViewModel related -->
     <string name="answer_skipped">Skipped</string>

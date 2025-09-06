@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,7 +85,7 @@ private fun SummaryCard(summary: String) {
 }
 
 @Composable
-private fun ColumnScope.IncorrectAnswersSection(incorrectAnswers: List<IncorrectAnswer>) {
+private fun IncorrectAnswersSection(incorrectAnswers: List<IncorrectAnswer>) {
     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
     Text(stringResource(R.string.result_review_incorrect_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
     Spacer(modifier = Modifier.height(8.dp))
@@ -178,7 +177,7 @@ private fun ReverseModeReview(incorrectAnswer: IncorrectAnswer) {
 }
 
 @Composable
-private fun RowScope.AnswerColorBox(label: String, color: Color) {
+private fun AnswerColorBox(label: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
         Text(
             text = label,

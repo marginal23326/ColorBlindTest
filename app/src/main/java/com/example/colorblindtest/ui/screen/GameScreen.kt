@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -260,7 +259,7 @@ private fun ReverseModeUI(vm: GameViewModel, q: Question) {
 }
 
 @Composable
-private fun ColumnScope.GameFooter(
+private fun GameFooter(
     correctCount: Int,
     showFeedback: Boolean,
     isAnswered: Boolean,
