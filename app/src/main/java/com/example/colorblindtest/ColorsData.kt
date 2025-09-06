@@ -1,9 +1,9 @@
 package com.example.colorblindtest
 
 import androidx.compose.ui.graphics.Color
+import com.example.colorblindtest.model.ColorItem
 import kotlin.random.Random
 
-data class ColorItem(val name: String, val color: Color)
 
 object ColorsData {
 

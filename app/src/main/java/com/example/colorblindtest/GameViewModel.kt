@@ -11,23 +11,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 import androidx.core.content.edit
 import kotlinx.coroutines.delay
+import com.example.colorblindtest.model.GameMode
+import com.example.colorblindtest.model.IncorrectAnswer
+import com.example.colorblindtest.model.Question
+import com.example.colorblindtest.model.Screen
 import kotlinx.coroutines.launch
 
-enum class Screen { HOME, GAME, RESULT }
-enum class GameMode { NORMAL, REVERSE }
-
-data class Question(
-    val prompt: String, // For REVERSE mode: "Which is Red?"; For NORMAL: Color patch is the prompt.
-    val correctName: String, // Name of the correct color
-    val color: Color, // Correct color. In NORMAL mode, this is the color displayed. In REVERSE, this is one of the options.
-    val options: List<Any> // List<String> for NORMAL, List<Color> for REVERSE
-)
-
-data class IncorrectAnswer(
-    val question: Question,
-    val selectedAnswer: Any, // String for NORMAL, Color for REVERSE
-    val gameMode: GameMode // To help display review correctly
-)
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
