@@ -1,5 +1,6 @@
 package com.example.colorblindtest.ui.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.colorblindtest.GameViewModel
 import com.example.colorblindtest.R
+import com.example.colorblindtest.model.Difficulty
 import com.example.colorblindtest.model.GameMode
 import java.util.Locale
 
@@ -57,6 +59,7 @@ fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
     val highScoreAverageTime by vm.highScoreAverageTime.collectAsState() // Collect average time
     val questionOptions = listOf(5, 10, 15, 20)
     val currentGameMode by vm.gameMode.collectAsState()
+    val currentDifficulty by vm.difficulty.collectAsState()
 
     Scaffold(
         floatingActionButton = {
@@ -133,6 +136,13 @@ fun HomeScreen(vm: GameViewModel, onStart: () -> Unit) {
                 onModeSelect = { vm.setGameMode(it) }
             )
 
+            AnimatedVisibility(visible = currentGameMode == GameMode.SHADE) {
+                DifficultySelectionSection(
+                    currentDifficulty = currentDifficulty,
+                    onDifficultySelect = { vm.setDifficulty(it) }
+                )
+            }
+
             QuestionSelectionSection(
                 current = currentTotalQuestions,
                 options = questionOptions,
@@ -197,6 +207,39 @@ private fun GameModeSelectionSection(
                                     GameMode.NORMAL -> R.string.game_mode_normal
                                     GameMode.REVERSE -> R.string.game_mode_reverse
                                     GameMode.SHADE -> R.string.game_mode_shade
+                                }
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    selectedIcon = Icons.Filled.CheckCircle
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DifficultySelectionSection(
+    currentDifficulty: Difficulty,
+    onDifficultySelect: (Difficulty) -> Unit
+) {
+    SelectionSection(title = stringResource(R.string.home_select_difficulty)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Difficulty.entries.forEach { difficulty ->
+                OptionChip(
+                    option = difficulty,
+                    currentSelection = currentDifficulty,
+                    onSelect = onDifficultySelect,
+                    label = {
+                        Text(
+                            text = stringResource(
+                                when (difficulty) {
+                                    Difficulty.MEDIUM -> R.string.difficulty_medium
+                                    Difficulty.HARD -> R.string.difficulty_hard
                                 }
                             ),
                             style = MaterialTheme.typography.bodyMedium

@@ -14,6 +14,9 @@
     <string name="game_mode_normal">Normal</string>
     <string name="game_mode_reverse">Reverse</string>
     <string name="game_mode_shade">Shade</string>
+    <string name="home_select_difficulty">Select Difficulty:</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
 
     <!-- GameScreen -->
     <string name="game_question_progress">Question %d / %d</string>
@@ -31,7 +34,7 @@
     <string name="result_review_incorrect_title">Review Incorrect Answers:</string>
     <string name="result_your_answer">Your answer: %s</string>
     <string name="result_correct_answer">Correct answer: %s</string>
-    <string name="result_your_answer_color">You picked this color for %s.</string>
+    <string name="result_your_answer_color">You picked this for %s.</string>
     <string name="result_correct_answer_color">This was the correct color for %s.</string>
     <string name="result_summary_title">Summary</string>
     <string name="result_your_answer_label">Your Answer</string>
@@ -39,7 +42,7 @@
 
     <!-- GameViewModel related -->
     <string name="answer_skipped">Skipped</string>
-    <string name="answer_skipped_color">Skipped (Color)</string>
+,    <string name="answer_skipped_color">Skipped (Color)</string>
     <string name="question_generation_error">Error generating question</string>
     <string name="summary_correct_accuracy">Correct: %1$d / %2$d
 Accuracy: %3$d%%</string>

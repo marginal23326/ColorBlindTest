@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 enum class Screen { HOME, GAME, RESULT }
 enum class GameMode { NORMAL, REVERSE, SHADE }
+enum class Difficulty { MEDIUM, HARD }
 
 data class Question(
     val prompt: String, // For REVERSE mode: "Which is Red?"; For NORMAL: Color patch is the prompt.

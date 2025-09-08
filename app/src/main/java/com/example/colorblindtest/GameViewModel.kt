@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.colorblindtest.model.Difficulty
 import com.example.colorblindtest.model.GameMode
 import com.example.colorblindtest.model.IncorrectAnswer
 import com.example.colorblindtest.model.Question
@@ -25,6 +26,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         private const val HIGH_SCORE_KEY = "highScore"
         private const val HIGH_SCORE_AVG_TIME_KEY = "highScoreAverageTime"
         private const val GAME_MODE_KEY = "gameMode"
+        private const val DIFFICULTY_KEY = "difficulty"
         private const val FEEDBACK_DURATION_MS_CORRECT = 500L
         private const val FEEDBACK_DURATION_MS_INCORRECT = 1000L
 
@@ -44,6 +46,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _gameMode = MutableStateFlow(GameMode.NORMAL)
     val gameMode: StateFlow<GameMode> = _gameMode.asStateFlow()
+
+    private val _difficulty = MutableStateFlow(Difficulty.MEDIUM)
+    val difficulty: StateFlow<Difficulty> = _difficulty.asStateFlow()
 
     private val _totalQuestions = MutableStateFlow(DEFAULT_TOTAL_QUESTIONS)
     val totalQuestions: StateFlow<Int> = _totalQuestions
@@ -86,11 +91,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _highScoreAverageTime.value = sharedPreferences.getFloat(HIGH_SCORE_AVG_TIME_KEY, -1.0f)
         val savedMode = sharedPreferences.getString(GAME_MODE_KEY, GameMode.NORMAL.name)
         _gameMode.value = GameMode.valueOf(savedMode ?: GameMode.NORMAL.name)
+        val savedDifficulty = sharedPreferences.getString(DIFFICULTY_KEY, Difficulty.MEDIUM.name)
+        _difficulty.value = Difficulty.valueOf(savedDifficulty ?: Difficulty.MEDIUM.name)
     }
 
     fun setGameMode(mode: GameMode) {
         _gameMode.value = mode
         sharedPreferences.edit { putString(GAME_MODE_KEY, mode.name) }
+    }
+
+    fun setDifficulty(difficulty: Difficulty) {
+        _difficulty.value = difficulty
+        sharedPreferences.edit { putString(DIFFICULTY_KEY, difficulty.name) }
     }
 
     fun setTotalQuestions(count: Int) {
@@ -289,14 +301,14 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 val colorOptions = (listOf(correctColorItem.color) + distractorColorItems.map { it.color }).shuffled()
                 Question(
-                    prompt = app.getString(R.string.question_prompt_reverse, correctColorItem.name),
+                    prompt = String.format(app.getString(R.string.question_prompt_reverse), correctColorItem.name),
                     correctName = correctColorItem.name,
                     color = correctColorItem.color,
                     options = colorOptions
                 )
             }
             GameMode.SHADE -> {
-                val (options, correctColor) = ColorsData.generateShadeQuestionOptions(9)
+                val (options, correctColor) = ColorsData.generateShadeQuestionOptions(9, _difficulty.value)
                 Question(
                     prompt = app.getString(R.string.question_prompt_shade),
                     correctName = "", // Not used in this mode

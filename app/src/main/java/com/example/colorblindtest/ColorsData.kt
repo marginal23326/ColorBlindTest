@@ -2,6 +2,7 @@ package com.example.colorblindtest
 
 import androidx.compose.ui.graphics.Color
 import com.example.colorblindtest.model.ColorItem
+import com.example.colorblindtest.model.Difficulty
 import kotlin.random.Random
 
 
@@ -80,7 +81,7 @@ object ColorsData {
         }
         return distractors.take(count) // Ensure we don't exceed count if remainingRandomColors is small
     }
-    fun generateShadeQuestionOptions(count: Int): Pair<List<Color>, Color> {
+    fun generateShadeQuestionOptions(count: Int, difficulty: Difficulty): Pair<List<Color>, Color> {
         val baseColorName = baseColors.keys.random()
         val baseColor = randomColor(baseColorName)
 
@@ -89,7 +90,12 @@ object ColorsData {
         val b = (baseColor.blue * 255).toInt()
 
         // The amount of difference in the shade
-        val delta = Random.nextInt(20, 26) * if (Random.nextBoolean()) 1 else -1
+        val deltaRange = when (difficulty) {
+            Difficulty.MEDIUM -> 20..25
+            Difficulty.HARD -> 10..15
+        }
+        val delta = deltaRange.random() * if (Random.nextBoolean()) 1 else -1
+
 
         // Randomly pick a channel to alter
         val channelToAlter = Random.nextInt(3)
