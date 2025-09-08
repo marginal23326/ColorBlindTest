@@ -89,7 +89,7 @@ object ColorsData {
         val b = (baseColor.blue * 255).toInt()
 
         // The amount of difference in the shade
-        val delta = Random.nextInt(15, 30) * if (Random.nextBoolean()) 1 else -1
+        val delta = Random.nextInt(20, 26) * if (Random.nextBoolean()) 1 else -1
 
         // Randomly pick a channel to alter
         val channelToAlter = Random.nextInt(3)
