@@ -3,23 +3,26 @@
 
     <!-- HomeScreen -->
     <string name="home_title">Color Blindness Quick Test</string>
-    <string name="home_high_score">High Score: %.0f / 100</string> <!-- Consider if this needs to be mode-specific -->
+    <string name="home_high_score">High Score: %.0f / 100</string>
     <string name="home_instructions">Normal Mode: You will be shown a color patch and several choices for its name. Try to pick the correct name as fast as you can.\n
-\nReverse Mode: You will be asked to identify a color by its name from several color patches.</string>
+\nReverse Mode: You will be asked to identify a color by its name from several color patches.\n
+\nShade Mode: You will be shown a grid of colors, one of which is a slightly different shade. Find the unique one.</string>
     <string name="home_number_of_questions">Number of Questions: %d</string>
     <string name="home_start_button">Start Test with %d Questions</string>
     <string name="home_clear_high_score_button">Clear High Score</string>
     <string name="home_select_game_mode">Select Game Mode:</string>
     <string name="game_mode_normal">Normal</string>
     <string name="game_mode_reverse">Reverse</string>
+    <string name="game_mode_shade">Shade</string>
 
     <!-- GameScreen -->
     <string name="game_question_progress">Question %d / %d</string>
     <string name="game_time_elapsed">Time: %ds</string>
     <string name="game_correct_count">Correct: %d</string>
     <string name="game_skip_button">Skip</string>
-    <string name="game_quit_button">Quit to Home</string> <!-- Added quit button string -->
-    <string name="question_prompt_reverse">Which of these is %s?</string> <!-- For Reverse Mode -->
+    <string name="game_quit_button">Quit to Home</string>
+    <string name="question_prompt_reverse">Which of these is %s?</string>
+    <string name="question_prompt_shade">Which color is the different shade?</string>
 
     <!-- ResultScreen -->
     <string name="result_title">Result</string>
@@ -28,8 +31,8 @@
     <string name="result_review_incorrect_title">Review Incorrect Answers:</string>
     <string name="result_your_answer">Your answer: %s</string>
     <string name="result_correct_answer">Correct answer: %s</string>
-    <string name="result_your_answer_color">You picked this color for %s.</string> <!-- For Reverse Mode Review -->
-    <string name="result_correct_answer_color">This was the correct color for %s.</string> <!-- For Reverse Mode Review -->
+    <string name="result_your_answer_color">You picked this color for %s.</string>
+    <string name="result_correct_answer_color">This was the correct color for %s.</string>
     <string name="result_summary_title">Summary</string>
     <string name="result_your_answer_label">Your Answer</string>
     <string name="result_correct_answer_label">Correct Answer</string>
@@ -48,5 +51,6 @@ Accuracy: %3$d%%</string>
     <string name="verdict_significant_signs">Significant signs of red/green confusion (possible protanopia/protanomaly).</string>
     <string name="mode_normal">Mode: Normal</string>
     <string name="mode_reverse">Mode: Reverse</string>
+    <string name="mode_shade">Mode: Shade</string>
 
 </resources>

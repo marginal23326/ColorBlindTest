@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -97,10 +100,10 @@ fun GameScreen(vm: GameViewModel) {
         ) {
             GameHeader(index, total, elapsedDisplay)
 
-            if (gameMode == GameMode.NORMAL) {
-                NormalModeUI(vm = vm, q = q)
-            } else {
-                ReverseModeUI(vm = vm, q = q)
+            when (gameMode) {
+                GameMode.NORMAL -> NormalModeUI(vm = vm, q = q)
+                GameMode.REVERSE -> ReverseModeUI(vm = vm, q = q)
+                GameMode.SHADE -> ShadeModeUI(vm = vm, q = q)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -242,6 +245,70 @@ private fun ReverseModeUI(vm: GameViewModel, q: Question) {
             Card(
                 modifier = Modifier
                     .size(72.dp)
+                    .then(if (border != null) Modifier.border(border, RoundedCornerShape(12.dp)) else Modifier)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(enabled = !showFeedback && !isAnswered) { vm.submitAnswer(colorOption) },
+                shape = RoundedCornerShape(12.dp),
+                elevation = elevation
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colorOption)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShadeModeUI(vm: GameViewModel, q: Question) {
+    val showFeedback by vm.showFeedback.collectAsState()
+    val isAnswered by vm.answered.collectAsState()
+    val wasCorrectDisplay by vm.wasCorrectDisplay.collectAsState()
+    val correctOptionForDisplay by vm.correctOptionForDisplay.collectAsState()
+    val userSelectedOption by vm.selectedAnswer.collectAsState()
+
+    val correctAnswerFeedbackColor = Color(0xFF388E3C)
+    val incorrectAnswerFeedbackColor = Color(0xFFD32F2F)
+    val correctBorder = BorderStroke(3.dp, correctAnswerFeedbackColor)
+    val incorrectBorder = BorderStroke(3.dp, incorrectAnswerFeedbackColor)
+
+    Text(
+        text = q.prompt,
+        style = MaterialTheme.typography.headlineSmall,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(q.options) { optAny ->
+            val colorOption = optAny as Color
+            val (border, elevation) = when {
+                showFeedback && colorOption == correctOptionForDisplay && wasCorrectDisplay == true ->
+                    correctBorder to CardDefaults.cardElevation(defaultElevation = 8.dp)
+                showFeedback && colorOption == correctOptionForDisplay && wasCorrectDisplay == false ->
+                    correctBorder to CardDefaults.cardElevation(defaultElevation = 4.dp)
+                showFeedback && colorOption == userSelectedOption && wasCorrectDisplay == false ->
+                    incorrectBorder to CardDefaults.cardElevation(defaultElevation = 8.dp)
+                showFeedback ->
+                    null to CardDefaults.cardElevation(defaultElevation = 1.dp)
+                else ->
+                    null to CardDefaults.cardElevation(defaultElevation = 2.dp)
+            }
+
+            Card(
+                modifier = Modifier
+                    .size(96.dp)
                     .then(if (border != null) Modifier.border(border, RoundedCornerShape(12.dp)) else Modifier)
                     .clip(RoundedCornerShape(12.dp))
                     .clickable(enabled = !showFeedback && !isAnswered) { vm.submitAnswer(colorOption) },

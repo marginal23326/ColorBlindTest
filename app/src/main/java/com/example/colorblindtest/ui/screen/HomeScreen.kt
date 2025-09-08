@@ -192,7 +192,13 @@ private fun GameModeSelectionSection(
                     onSelect = onModeSelect,
                     label = {
                         Text(
-                            text = stringResource(if (mode == GameMode.NORMAL) R.string.game_mode_normal else R.string.game_mode_reverse),
+                            text = stringResource(
+                                when (mode) {
+                                    GameMode.NORMAL -> R.string.game_mode_normal
+                                    GameMode.REVERSE -> R.string.game_mode_reverse
+                                    GameMode.SHADE -> R.string.game_mode_shade
+                                }
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },

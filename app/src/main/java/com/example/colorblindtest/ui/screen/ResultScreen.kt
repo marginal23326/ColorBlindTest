@@ -162,10 +162,10 @@ private fun IncorrectAnswerReviewCard(incorrectAnswer: IncorrectAnswer) {
                 textAlign = TextAlign.Center
             )
 
-            if (incorrectAnswer.gameMode == GameMode.NORMAL) {
-                NormalModeReview(incorrectAnswer)
-            } else {
-                ReverseModeReview(incorrectAnswer)
+            when (incorrectAnswer.gameMode) {
+                GameMode.NORMAL -> NormalModeReview(incorrectAnswer)
+                GameMode.REVERSE -> ReverseModeReview(incorrectAnswer)
+                GameMode.SHADE -> ReverseModeReview(incorrectAnswer) // Same as Reverse for now
             }
         }
     }

@@ -5,16 +5,16 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.util.Locale
-import androidx.core.content.edit
-import kotlinx.coroutines.delay
 import com.example.colorblindtest.model.GameMode
 import com.example.colorblindtest.model.IncorrectAnswer
 import com.example.colorblindtest.model.Question
 import com.example.colorblindtest.model.Screen
+import java.util.Locale
+import androidx.core.content.edit
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
@@ -121,7 +121,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (answered.value || _showFeedback.value) return
         val isCorrect = when (_gameMode.value) {
             GameMode.NORMAL -> (option as? String) == _currentQuestion.value.correctName
-            GameMode.REVERSE -> (option as? Color) == _currentQuestion.value.color
+            GameMode.REVERSE, GameMode.SHADE -> (option as? Color) == _currentQuestion.value.color
         }
         handleAnswer(option, isCorrect)
     }
@@ -130,7 +130,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         if (answered.value || _showFeedback.value) return
         val skippedAnswer = when (_gameMode.value) {
             GameMode.NORMAL -> app.getString(R.string.answer_skipped)
-            GameMode.REVERSE -> Color.Transparent
+            GameMode.REVERSE, GameMode.SHADE -> Color.Transparent
         }
         handleAnswer(skippedAnswer, isCorrect = false)
     }
@@ -144,7 +144,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val q = _currentQuestion.value
         _correctOptionForDisplay.value = when (_gameMode.value) {
             GameMode.NORMAL -> q.correctName
-            GameMode.REVERSE -> q.color
+            GameMode.REVERSE, GameMode.SHADE -> q.color
         }
         _wasCorrectDisplay.value = isCorrect
 
@@ -240,10 +240,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val accuracySummary = app.getString(R.string.summary_correct_accuracy, correct, total, accuracyPercentage)
         val avgTimeValue = if (times.isNotEmpty()) times.average() / 1000.0 else -1.0
         val timeSummary = if (avgTimeValue >= 0) String.format(Locale.US, app.getString(R.string.summary_average_time), avgTimeValue)
-                          else app.getString(R.string.summary_average_time_na)
+        else app.getString(R.string.summary_average_time_na)
 
         val verdictSummary = app.getString(R.string.summary_verdict_title, verdictString)
-        val modeInfo = app.getString(if (_gameMode.value == GameMode.NORMAL) R.string.mode_normal else R.string.mode_reverse)
+        val modeInfo = app.getString(
+            when (_gameMode.value) {
+                GameMode.NORMAL -> R.string.mode_normal
+                GameMode.REVERSE -> R.string.mode_reverse
+                GameMode.SHADE -> R.string.mode_shade
+            }
+        )
 
         return "$modeInfo\n$accuracySummary\n$timeSummary\n\n$verdictSummary"
     }
@@ -287,6 +293,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     correctName = correctColorItem.name,
                     color = correctColorItem.color,
                     options = colorOptions
+                )
+            }
+            GameMode.SHADE -> {
+                val (options, correctColor) = ColorsData.generateShadeQuestionOptions(9)
+                Question(
+                    prompt = app.getString(R.string.question_prompt_shade),
+                    correctName = "", // Not used in this mode
+                    color = correctColor,
+                    options = options
                 )
             }
         }

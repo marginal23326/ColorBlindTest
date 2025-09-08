@@ -80,4 +80,29 @@ object ColorsData {
         }
         return distractors.take(count) // Ensure we don't exceed count if remainingRandomColors is small
     }
+    fun generateShadeQuestionOptions(count: Int): Pair<List<Color>, Color> {
+        val baseColorName = baseColors.keys.random()
+        val baseColor = randomColor(baseColorName)
+
+        val r = (baseColor.red * 255).toInt()
+        val g = (baseColor.green * 255).toInt()
+        val b = (baseColor.blue * 255).toInt()
+
+        // The amount of difference in the shade
+        val delta = Random.nextInt(15, 30) * if (Random.nextBoolean()) 1 else -1
+
+        // Randomly pick a channel to alter
+        val channelToAlter = Random.nextInt(3)
+        val correctColor = when (channelToAlter) {
+            0 -> Color((r + delta).coerceIn(0, 255), g, b)
+            1 -> Color(r, (g + delta).coerceIn(0, 255), b)
+            else -> Color(r, g, (b + delta).coerceIn(0, 255))
+        }
+
+        val options = MutableList(count) { baseColor }
+        val correctIndex = Random.nextInt(count)
+        options[correctIndex] = correctColor
+
+        return Pair(options, correctColor)
+    }
 }
